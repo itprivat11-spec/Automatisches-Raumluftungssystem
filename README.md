@@ -1,4 +1,4 @@
-# Intelligentes Lüftungssystem – Smart Home durch automatische Fenstersteuerung
+# Intelligentes Lüftungssystem
 
 - Programiersprache: C++
 
