@@ -1,0 +1,13 @@
+        Handy / PC (Browser)
+               ▲ │
+               │ ▼      Sollwerte einstellen, Werte ansehen
+        ┌──────────────┐
+        │ ESP32 Zentrale│  Webserver + Regelung
+        └──────────────┘
+          ▲│     ▲│     ▲│          alles über WLAN (Router)
+          │▼     │▼     │▼
+     ┌────────┐ ┌────────┐ ┌────────┐
+     │ Raum 1 │ │ Raum 2 │ │ Raum 3 │   je ein ESP32
+     └────────┘ └────────┘ └────────┘
+      │      │    │      │    │      │
+   Sensor  Servo Sensor Servo Sensor Servo
