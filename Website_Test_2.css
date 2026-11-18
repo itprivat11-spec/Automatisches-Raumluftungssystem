@@ -1,0 +1,46 @@
+.Temperatur {
+    height: 40px;
+}
+
+.Feuchtigkeit {
+    height: 40px;
+}
+
+.CO2 {
+    height: 40px;
+}
+
+.zimmer1-grid {
+    display: grid;
+    grid-template-columns: max-content max-content;
+    gap: 15px;
+    align-items: center;
+}
+
+/* Alle direkten Kinder standardmäßig in Spalte 1 untereinander setzen */
+.zimmer1-grid > * {
+    grid-column: 1;
+}
+
+/* Speichern-Button in Zeile 2 (direkt unter Zimmer 1) */
+.zimmer1-grid > h1:nth-of-type(2),
+.speichern-btn {
+    grid-row: 2;
+}
+
+/* Eingabefelder in die Zeilen 3, 4 und 5 */
+.Temperatur   { grid-row: 3; }
+.Feuchtigkeit { grid-row: 4; }
+.CO2          { grid-row: 5; }
+
+/* Reset-Button ganz nach unten in Zeile 6 */
+.zimmer1-grid > h1:last-of-type,
+.reset-btn {
+    grid-row: 6;
+}
+
+/* NUR der Ausgabewert darf in Spalte 2 (Zeile 4 = rechts neben Feuchtigkeit) */
+.Knopf_Speichern_Zimmer_1_Ausgabewert {
+    grid-column: 2;
+    grid-row: 4;
+}

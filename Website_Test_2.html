@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="Website_Test_2.css">
+    <script src="Website_Test_2.js" defer></script>
+</head>
+<body style="background-color: lightblue;">
+    <h1 style="font-family: Arial, sans-serif; font-size: 40px; color: black;">Einstellungen</h1>
+    <!--Zimmer 1 -->
+    <div class="zimmer1-grid"><h1 style="font-family: Arial, sans-serif; font-size: 30px; color: black;">Zimmer 1</h1>
+
+    <!--Knopf Speichern-->
+    <h1><button id="Knopf_Speichern_Zimmer_1" type="button" style="font-size: 30px">Speichern</button></h1>
+    <div class="Knopf_Speichern_Zimmer_1_Ausgabewert"><h1 id="Knopf_Speichern_Zimmer_1_Ausgabewert"></h1></div>
+    <script>
+    const knopf = document.getElementById("Knopf_Speichern_Zimmer_1");
+    const ausgabe = document.getElementById("Knopf_Speichern_Zimmer_1_Ausgabewert");
+        
+    function knopfGedruckt() {
+        if ausgabe.textContent = "Der Knopf";
+     }
+
+     knopf.addEventListener("click", knopfGedruckt);
+    </script>
+
+
+    <!--Temperatur Eingabe-->
+    <label for="Zimmer 1 Temperatur"></label>
+    <div class="Temperatur"><input type="text" id="Zimmer_1_Temperatur" name="beispiel" placeholder="Temperatur eingeben"></div>
+    <!--Momentan Temperatur-->
+
+    <!--Feuchtigkeit Eingabe-->
+    <label for="Zimmer 1 Feuchtigkeit"></label>
+    <div class="Feuchtigkeit"><input type="text" id="Zimmer 1 Feuchtigkeit" name="beispiel" placeholder="Feuchtigkeit eingeben"></div>
+    <!--Momentan Feuchtigkeit-->
+
+    <!--CO2 Eingabe-->
+    <label for="Zimmer 1 CO2"></label>
+    <div class="CO2"><input type="text" id="Zimmer 1 CO2" name="beispiel" placeholder="CO2 gehalt eingeben"></div>
+    <h1><button type="button" style="font-size: 30px">Reset</button></h1>
+    <!--Momentan CO2-->
+    </div>
+
+    <!--Zimmer 2 -->
+    <h1 style="font-family: Arial, sans-serif; font-size: 30px; color: black;">Zimmer 2</h1>
+    <h1><button type="button" style="font-size: 30px">Speichern</button></h1>
+    <!--Zimmer 3 -->
+    <h1 style="font-family: Arial, sans-serif; font-size: 30px; color: black;">Zimmer 3</h1>
+    <h1><button type="button" style="font-size: 30px">Speichern</button></h1>
+
+
+
+
+
+</body>
+</html>
