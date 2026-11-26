@@ -1,0 +1,96 @@
+// RAUMKNOTEN (ESP32) - kein Webserver
+// - verbindet sich mit dem WLAN
+// - schickt alle 10 s Messwerte an die Zentrale (hier noch Testwerte)
+// - liest aus der Antwort die Sollwerte der Zentrale
+
+#include <WiFi.h>
+#include <HTTPClient.h>
+
+const char* ssid = "DEIN_WLAN_NAME";
+const char* password = "DEIN_PASSWORT";
+
+// ---------- Pro Raum anpassen ----------
+const int RAUM_ID = 1;                       // 1, 2 oder 3
+const char* ZENTRALE_IP = "192.168.1.50";    // IP der Zentrale (aus ihrem seriellen Monitor)
+
+// ---------- Sollwerte (werden von der Zentrale aktualisiert) ----------
+float sollTemp = 25.0;
+int sollCo2 = 800;
+int sollHum = 50;
+
+const unsigned long MELDE_INTERVALL = 10000;  // 10 s
+unsigned long letzteMeldung = 0;
+
+void wlanVerbinden() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  Serial.print("Verbinde");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.print("Eigene IP: ");
+  Serial.println(WiFi.localIP());
+}
+
+// Antwort der Zentrale: "25.0;800;50" -> in die drei Sollwerte zerlegen
+void sollwerteLesen(String antwort) {
+  int p1 = antwort.indexOf(';');
+  int p2 = antwort.indexOf(';', p1 + 1);
+  if (p1 < 0 || p2 < 0) {
+    Serial.println("Antwort hat falsches Format");
+    return;
+  }
+  sollTemp = antwort.substring(0, p1).toFloat();
+  sollCo2 = antwort.substring(p1 + 1, p2).toInt();
+  sollHum = antwort.substring(p2 + 1).toInt();
+}
+
+// Messwerte an die Zentrale schicken
+void meldungSenden(float temp, int co2, float hum) {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WLAN weg, versuche neu zu verbinden");
+    WiFi.reconnect();
+    return;
+  }
+
+  String url = "http://" + String(ZENTRALE_IP) + "/api/meldung";
+  url += "?raum=" + String(RAUM_ID);
+  url += "&temp=" + String(temp, 1);
+  url += "&co2=" + String(co2);
+  url += "&hum=" + String(hum, 1);
+
+  HTTPClient http;
+  http.setTimeout(3000);   // nicht ewig warten, falls die Zentrale nicht antwortet
+  http.begin(url);
+  int code = http.GET();   // Anfrage senden
+
+  if (code == 200) {
+    String antwort = http.getString();
+    Serial.println("Antwort der Zentrale: " + antwort);
+    sollwerteLesen(antwort);
+    Serial.printf("Sollwerte: %.1f C, %d ppm, %d %%\n", sollTemp, sollCo2, sollHum);
+  } else {
+    Serial.printf("Fehler bei der Meldung, Code: %d\n", code);
+  }
+  http.end();
+}
+
+void setup() {
+  Serial.begin(115200);
+  wlanVerbinden();
+}
+
+void loop() {
+  if (millis() - letzteMeldung >= MELDE_INTERVALL) {
+    letzteMeldung = millis();
+
+    // Testwerte, spaeter kommen sie vom SCD40
+    float temp = 22.0 + random(0, 50) / 10.0;   // 22.0 bis 26.9
+    int co2 = 600 + random(0, 600);             // 600 bis 1199
+    float hum = 40.0 + random(0, 200) / 10.0;   // 40.0 bis 59.9
+
+    meldungSenden(temp, co2, hum);
+  }
+}
