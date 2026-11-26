@@ -1,33 +1,25 @@
-// ZENTRALE (ESP32)
-// - zeigt eine Webseite mit den Werten der Raeume
-// - speichert die Sollwerte (Benutzer stellt sie auf der Seite ein)
-// - nimmt Meldungen der Raumknoten an und antwortet mit den Sollwerten
-
+//Zentralle
 #include <WiFi.h>
 #include <WebServer.h>
 
-const char* ssid = "DEIN_WLAN_NAME";
-const char* password = "DEIN_PASSWORT";
+const char* ssid = "SFZ-Singen-Gast";
+const char* password = "SFZ_2021";
 
 WebServer server(80);
 
-// ---------- Sollwerte (werden an die Raeume weitergegeben) ----------
 float sollTemp = 25.0;
 int sollCo2 = 800;
 int sollHum = 50;
 
-// ---------- Letzte Messwerte der Raeume (Index 1 bis 3) ----------
 struct RaumDaten {
   float temp;
   int co2;
   float hum;
-  unsigned long zuletzt;   // Zeitpunkt der letzten Meldung (millis)
-  bool vorhanden;          // gab es schon mal eine Meldung?
+  unsigned long zuletzt;  
+  bool vorhanden;          
 };
 RaumDaten raeume[4];
 
-// ---------- /api/meldung?raum=1&temp=23.4&co2=850&hum=48.1 ----------
-// Wird vom Raumknoten aufgerufen. Antwort = Sollwerte als Text "25.0;800;50"
 void meldung() {
   if (!server.hasArg("raum") || !server.hasArg("temp") ||
       !server.hasArg("co2") || !server.hasArg("hum")) {
@@ -54,8 +46,6 @@ void meldung() {
   server.send(200, "text/plain", antwort);
 }
 
-// ---------- /soll?temp=25&co2=800&hum=50 ----------
-// Wird vom Formular auf der Webseite aufgerufen
 void sollSetzen() {
   if (server.hasArg("temp")) sollTemp = constrain(server.arg("temp").toFloat(), 15.0, 30.0);
   if (server.hasArg("co2"))  sollCo2  = constrain(server.arg("co2").toInt(), 400, 2000);
@@ -63,11 +53,10 @@ void sollSetzen() {
 
   Serial.printf("Neue Sollwerte: %.1f C, %d ppm, %d %%\n", sollTemp, sollCo2, sollHum);
 
-  server.sendHeader("Location", "/");   // zurueck zur Startseite
+  server.sendHeader("Location", "/"); 
   server.send(303);
 }
 
-// ---------- Startseite ----------
 void startseite() {
   String html = "<!DOCTYPE html><html><head>";
   html += "<meta name='viewport' content='width=device-width, initial-scale=1'>";
@@ -110,7 +99,7 @@ void setup() {
   }
   Serial.println();
   Serial.print("IP der Zentrale: ");
-  Serial.println(WiFi.localIP());   // diese IP kommt in den Raumknoten-Code!
+  Serial.println(WiFi.localIP());   // diese IP kommt in den Raumknoten-Code
 
   server.on("/", startseite);
   server.on("/soll", sollSetzen);
@@ -118,6 +107,9 @@ void setup() {
   server.begin();
 }
 
+void loop() {
+  server.handleClient();
+}
 void loop() {
   server.handleClient();
 }
