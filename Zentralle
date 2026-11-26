@@ -1,0 +1,123 @@
+// ZENTRALE (ESP32)
+// - zeigt eine Webseite mit den Werten der Raeume
+// - speichert die Sollwerte (Benutzer stellt sie auf der Seite ein)
+// - nimmt Meldungen der Raumknoten an und antwortet mit den Sollwerten
+
+#include <WiFi.h>
+#include <WebServer.h>
+
+const char* ssid = "DEIN_WLAN_NAME";
+const char* password = "DEIN_PASSWORT";
+
+WebServer server(80);
+
+// ---------- Sollwerte (werden an die Raeume weitergegeben) ----------
+float sollTemp = 25.0;
+int sollCo2 = 800;
+int sollHum = 50;
+
+// ---------- Letzte Messwerte der Raeume (Index 1 bis 3) ----------
+struct RaumDaten {
+  float temp;
+  int co2;
+  float hum;
+  unsigned long zuletzt;   // Zeitpunkt der letzten Meldung (millis)
+  bool vorhanden;          // gab es schon mal eine Meldung?
+};
+RaumDaten raeume[4];
+
+// ---------- /api/meldung?raum=1&temp=23.4&co2=850&hum=48.1 ----------
+// Wird vom Raumknoten aufgerufen. Antwort = Sollwerte als Text "25.0;800;50"
+void meldung() {
+  if (!server.hasArg("raum") || !server.hasArg("temp") ||
+      !server.hasArg("co2") || !server.hasArg("hum")) {
+    server.send(400, "text/plain", "Parameter fehlen");
+    return;
+  }
+
+  int raum = server.arg("raum").toInt();
+  if (raum < 1 || raum > 3) {
+    server.send(400, "text/plain", "Raum ungueltig");
+    return;
+  }
+
+  raeume[raum].temp = server.arg("temp").toFloat();
+  raeume[raum].co2 = server.arg("co2").toInt();
+  raeume[raum].hum = server.arg("hum").toFloat();
+  raeume[raum].zuletzt = millis();
+  raeume[raum].vorhanden = true;
+
+  Serial.printf("Raum %d: %.1f C, %d ppm, %.1f %%\n",
+                raum, raeume[raum].temp, raeume[raum].co2, raeume[raum].hum);
+
+  String antwort = String(sollTemp, 1) + ";" + String(sollCo2) + ";" + String(sollHum);
+  server.send(200, "text/plain", antwort);
+}
+
+// ---------- /soll?temp=25&co2=800&hum=50 ----------
+// Wird vom Formular auf der Webseite aufgerufen
+void sollSetzen() {
+  if (server.hasArg("temp")) sollTemp = constrain(server.arg("temp").toFloat(), 15.0, 30.0);
+  if (server.hasArg("co2"))  sollCo2  = constrain(server.arg("co2").toInt(), 400, 2000);
+  if (server.hasArg("hum"))  sollHum  = constrain(server.arg("hum").toInt(), 20, 80);
+
+  Serial.printf("Neue Sollwerte: %.1f C, %d ppm, %d %%\n", sollTemp, sollCo2, sollHum);
+
+  server.sendHeader("Location", "/");   // zurueck zur Startseite
+  server.send(303);
+}
+
+// ---------- Startseite ----------
+void startseite() {
+  String html = "<!DOCTYPE html><html><head>";
+  html += "<meta name='viewport' content='width=device-width, initial-scale=1'>";
+  html += "<meta http-equiv='refresh' content='10'>";   // alle 10 s neu laden
+  html += "<title>Raumluft</title></head><body style='font-family:sans-serif'>";
+  html += "<h1>Raumluft</h1>";
+
+  for (int i = 1; i <= 3; i++) {
+    html += "<h3>Raum " + String(i) + "</h3>";
+    bool online = raeume[i].vorhanden && (millis() - raeume[i].zuletzt < 30000);
+    if (online) {
+      html += "<p>" + String(raeume[i].temp, 1) + " &deg;C, " +
+              String(raeume[i].co2) + " ppm, " +
+              String(raeume[i].hum, 1) + " %</p>";
+    } else {
+      html += "<p>offline</p>";
+    }
+  }
+
+  html += "<h2>Sollwerte</h2>";
+  html += "<form action='/soll' method='get'>";
+  html += "Temperatur: <input type='number' step='0.5' name='temp' value='" + String(sollTemp, 1) + "'> &deg;C<br>";
+  html += "CO2: <input type='number' name='co2' value='" + String(sollCo2) + "'> ppm<br>";
+  html += "Feuchte: <input type='number' name='hum' value='" + String(sollHum) + "'> %<br>";
+  html += "<button type='submit'>Speichern</button>";
+  html += "</form></body></html>";
+
+  server.send(200, "text/html", html);
+}
+
+void setup() {
+  Serial.begin(115200);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  Serial.print("Verbinde");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.print("IP der Zentrale: ");
+  Serial.println(WiFi.localIP());   // diese IP kommt in den Raumknoten-Code!
+
+  server.on("/", startseite);
+  server.on("/soll", sollSetzen);
+  server.on("/api/meldung", meldung);
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();
+}
